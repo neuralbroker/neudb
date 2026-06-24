@@ -51,6 +51,25 @@ pip install -e .
 
 Then you can `import neudb` from anywhere.
 
+## HTTP API
+
+Install the API extra and run FastAPI with Uvicorn:
+
+```bash
+pip install -e ".[api]"
+uvicorn neudb.api:app --reload
+```
+
+Open Swagger UI at `http://127.0.0.1:8000/docs`, or use curl:
+
+```bash
+curl -X POST http://127.0.0.1:8000/users \
+  -H 'Content-Type: application/json' \
+  -d '{"username":"alice","email":"alice@example.com"}'
+```
+
+Set `NEUDB_API_DB=/path/to/db` to choose the API storage directory. By default it uses `neudb_api_data/`.
+
 ## License
 MIT – see [LICENSE](LICENSE).
 

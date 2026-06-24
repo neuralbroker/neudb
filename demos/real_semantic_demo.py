@@ -14,7 +14,7 @@ add_message_with_embedding(db, session, "user", "The weather is really nice toda
 
 query_text = "help with Python import errors"
 if EMBEDDING_AVAILABLE:
-    query_vec = EMBED_MODEL.encode(query_text).tolist()
+    query_vec = embed_text(query_text)
     print(f"Searching for: '{query_text}'\n")
     messages_table = db.table("messages")
     results = messages_table.search_similar("embedding", query_vec, top_k=3)

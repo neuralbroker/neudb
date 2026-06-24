@@ -8,6 +8,8 @@ from neudb.ai_schema import (
     get_memory,
     get_session_messages,
     get_user_sessions,
+    get_embedding_model,
+    embed_text,
     init_ai_database,
     tag_message,
 )
@@ -70,3 +72,13 @@ def test_add_message_with_embedding_without_optional_dependency(tmp_path, monkey
     message = db.table("messages").select_by("id", message_id)[0]
 
     assert message["embedding"] is None
+
+
+def test_embedding_model_is_lazy_when_optional_dependency_is_disabled(monkeypatch):
+    import neudb.ai_schema as ai_schema
+
+    monkeypatch.setattr(ai_schema, "EMBEDDING_AVAILABLE", False)
+    monkeypatch.setattr(ai_schema, "EMBED_MODEL", None)
+
+    assert get_embedding_model() is None
+    assert embed_text("hello") is None

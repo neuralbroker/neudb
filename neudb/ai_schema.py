@@ -3,12 +3,30 @@ from . import connect
 
 try:
     from sentence_transformers import SentenceTransformer
-    EMBED_MODEL = SentenceTransformer('all-MiniLM-L6-v2')
     EMBEDDING_AVAILABLE = True
 except ImportError:
-    EMBED_MODEL = None
+    SentenceTransformer = None
     EMBEDDING_AVAILABLE = False
     print("sentence-transformers not installed. Embeddings disabled.")
+
+EMBED_MODEL = None
+
+
+def get_embedding_model():
+    """Load the embedding model on first use."""
+    global EMBED_MODEL
+    if not EMBEDDING_AVAILABLE:
+        return None
+    if EMBED_MODEL is None:
+        EMBED_MODEL = SentenceTransformer('all-MiniLM-L6-v2')
+    return EMBED_MODEL
+
+
+def embed_text(content):
+    model = get_embedding_model()
+    if model is None:
+        return None
+    return model.encode(content).tolist()
 
 
 def init_ai_database(db_dir="ai_memory"):
@@ -49,14 +67,11 @@ def add_message(db, session_id, role, content, metadata=None):
 
 
 def add_message_with_embedding(db, session_id, role, content, metadata=None):
-    embedding = None
-    if EMBEDDING_AVAILABLE:
-        embedding = EMBED_MODEL.encode(content).tolist()
     message = {
         "session_id": session_id,
         "role": role,
         "content": content,
-        "embedding": embedding,
+        "embedding": embed_text(content),
         "metadata": metadata or {}
     }
     return db.table("messages").insert(message)
