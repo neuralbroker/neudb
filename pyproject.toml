@@ -7,12 +7,19 @@ name = "neudb"
 version = "0.4.0"
 description = "A tiny, file-based, AI-native database engine with semantic search"
 readme = "README.md"
-license = {text = "MIT"}
+license = "MIT"
 requires-python = ">=3.8"
 dependencies = []
-optional-dependencies = {
-    "embeddings" = ["sentence-transformers>=2.0"]
-}
+
+[project.optional-dependencies]
+embeddings = ["sentence-transformers>=2.0"]
+test = ["pytest>=8.0"]
 
 [project.scripts]
 neudb = "neudb:main"
+
+[tool.setuptools]
+packages = ["neudb"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
