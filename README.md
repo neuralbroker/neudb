@@ -70,6 +70,27 @@ curl -X POST http://127.0.0.1:8000/users \
 
 Set `NEUDB_API_DB=/path/to/db` to choose the API storage directory. By default it uses `neudb_api_data/`.
 
+## Local LLM agent memory
+
+Run a chat loop that uses neuDB as long-term memory for Ollama:
+
+```bash
+ollama pull llama3.2
+pip install -e ".[agent]"
+neudb-agent --provider ollama --model llama3.2
+```
+
+Each turn searches similar past messages, injects them into the prompt, and saves the new user/assistant exchange back into neuDB.
+
+OpenAI is also supported:
+
+```bash
+export OPENAI_API_KEY="..."
+neudb-agent --provider openai --model gpt-4o-mini
+```
+
+Use `--db /path/to/memory` to choose the memory directory. By default it uses `neudb_agent_memory/`.
+
 ## License
 MIT – see [LICENSE](LICENSE).
 

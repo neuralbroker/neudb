@@ -20,6 +20,7 @@ ai_real_memory/
 ai_semantic_demo/
 my_ai_memory/
 neudb_api_data/
+neudb_agent_memory/
 
 # IDE / editor
 .vscode/
