@@ -1,5 +1,5 @@
 from neudb import connect, cosine_similarity
-from neudb_ai_schema import *
+from neudb.ai_schema import *
 
 db = init_ai_database("ai_real_memory")
 

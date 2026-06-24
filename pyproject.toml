@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "neudb"
+version = "0.4.0"
+description = "A tiny, file-based, AI-native database engine with semantic search"
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.8"
+dependencies = []
+optional-dependencies = {
+    "embeddings" = ["sentence-transformers>=2.0"]
+}
+
+[project.scripts]
+neudb = "neudb:main"

@@ -1,0 +1,3 @@
+# Core neuDB has no dependencies.
+# To enable AI embeddings, install:
+# sentence-transformers>=2.0

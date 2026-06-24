@@ -1,6 +1,5 @@
-# neudb_ai_schema.py
-from neudb import connect
-import uuid
+# neudb/ai_schema.py — AI memory helpers for neuDB
+from . import connect
 
 try:
     from sentence_transformers import SentenceTransformer
@@ -11,11 +10,13 @@ except ImportError:
     EMBEDDING_AVAILABLE = False
     print("sentence-transformers not installed. Embeddings disabled.")
 
+
 def init_ai_database(db_dir="ai_memory"):
     db = connect(db_dir)
     for name in ["users", "sessions", "messages", "tags", "memories"]:
         db.create_table(name)
     return db
+
 
 def add_user(db, username, email, display_name=None, metadata=None):
     user = {
@@ -26,6 +27,7 @@ def add_user(db, username, email, display_name=None, metadata=None):
     }
     return db.table("users").insert(user)
 
+
 def create_session(db, user_id, title, description="", model="", metadata=None):
     session = {
         "user_id": user_id,
@@ -35,6 +37,7 @@ def create_session(db, user_id, title, description="", model="", metadata=None):
     }
     return db.table("sessions").insert(session)
 
+
 def add_message(db, session_id, role, content, metadata=None):
     message = {
         "session_id": session_id,
@@ -43,6 +46,7 @@ def add_message(db, session_id, role, content, metadata=None):
         "metadata": metadata or {}
     }
     return db.table("messages").insert(message)
+
 
 def add_message_with_embedding(db, session_id, role, content, metadata=None):
     embedding = None
@@ -57,6 +61,7 @@ def add_message_with_embedding(db, session_id, role, content, metadata=None):
     }
     return db.table("messages").insert(message)
 
+
 def add_tag(db, name):
     tags = db.table("tags")
     existing = tags.select_by("name", name)
@@ -64,8 +69,9 @@ def add_tag(db, name):
         return existing[0]["id"]
     return tags.insert({"name": name})
 
+
 def tag_message(db, message_id, tag_name):
-    tag_id = add_tag(db, tag_name)
+    add_tag(db, tag_name)
     msg_table = db.table("messages")
     msg = msg_table.select_by("id", message_id)
     if msg:
@@ -76,11 +82,14 @@ def tag_message(db, message_id, tag_name):
             msg["metadata"]["tags"] = tags_list
             msg_table.update(message_id, {"metadata": msg["metadata"]})
 
+
 def get_session_messages(db, session_id):
     return [m for m in db.table("messages").select_all() if m["session_id"] == session_id]
 
+
 def get_user_sessions(db, user_id):
     return db.table("sessions").select_by("user_id", user_id)
+
 
 def add_memory(db, user_id, key, value, metadata=None):
     memories = db.table("memories")
@@ -94,6 +103,7 @@ def add_memory(db, user_id, key, value, metadata=None):
         "value": value,
         "metadata": metadata or {}
     })
+
 
 def get_memory(db, user_id, key):
     for mem in db.table("memories").select_all():
