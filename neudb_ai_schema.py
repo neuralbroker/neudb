@@ -1,0 +1,102 @@
+# neudb_ai_schema.py
+from neudb import connect
+import uuid
+
+try:
+    from sentence_transformers import SentenceTransformer
+    EMBED_MODEL = SentenceTransformer('all-MiniLM-L6-v2')
+    EMBEDDING_AVAILABLE = True
+except ImportError:
+    EMBED_MODEL = None
+    EMBEDDING_AVAILABLE = False
+    print("sentence-transformers not installed. Embeddings disabled.")
+
+def init_ai_database(db_dir="ai_memory"):
+    db = connect(db_dir)
+    for name in ["users", "sessions", "messages", "tags", "memories"]:
+        db.create_table(name)
+    return db
+
+def add_user(db, username, email, display_name=None, metadata=None):
+    user = {
+        "username": username,
+        "email": email,
+        "display_name": display_name or username,
+        "metadata": metadata or {}
+    }
+    return db.table("users").insert(user)
+
+def create_session(db, user_id, title, description="", model="", metadata=None):
+    session = {
+        "user_id": user_id,
+        "title": title,
+        "description": description,
+        "metadata": {"model": model, **(metadata or {})}
+    }
+    return db.table("sessions").insert(session)
+
+def add_message(db, session_id, role, content, metadata=None):
+    message = {
+        "session_id": session_id,
+        "role": role,
+        "content": content,
+        "metadata": metadata or {}
+    }
+    return db.table("messages").insert(message)
+
+def add_message_with_embedding(db, session_id, role, content, metadata=None):
+    embedding = None
+    if EMBEDDING_AVAILABLE:
+        embedding = EMBED_MODEL.encode(content).tolist()
+    message = {
+        "session_id": session_id,
+        "role": role,
+        "content": content,
+        "embedding": embedding,
+        "metadata": metadata or {}
+    }
+    return db.table("messages").insert(message)
+
+def add_tag(db, name):
+    tags = db.table("tags")
+    existing = tags.select_by("name", name)
+    if existing:
+        return existing[0]["id"]
+    return tags.insert({"name": name})
+
+def tag_message(db, message_id, tag_name):
+    tag_id = add_tag(db, tag_name)
+    msg_table = db.table("messages")
+    msg = msg_table.select_by("id", message_id)
+    if msg:
+        msg = msg[0]
+        tags_list = msg.get("metadata", {}).get("tags", [])
+        if tag_name not in tags_list:
+            tags_list.append(tag_name)
+            msg["metadata"]["tags"] = tags_list
+            msg_table.update(message_id, {"metadata": msg["metadata"]})
+
+def get_session_messages(db, session_id):
+    return [m for m in db.table("messages").select_all() if m["session_id"] == session_id]
+
+def get_user_sessions(db, user_id):
+    return db.table("sessions").select_by("user_id", user_id)
+
+def add_memory(db, user_id, key, value, metadata=None):
+    memories = db.table("memories")
+    for mem in memories.select_all():
+        if mem["user_id"] == user_id and mem["key"] == key:
+            memories.update(mem["id"], {"value": value, "metadata": metadata or {}})
+            return mem["id"]
+    return memories.insert({
+        "user_id": user_id,
+        "key": key,
+        "value": value,
+        "metadata": metadata or {}
+    })
+
+def get_memory(db, user_id, key):
+    for mem in db.table("memories").select_all():
+        if mem["user_id"] == user_id and mem["key"] == key:
+            return mem["value"]
+    return None
