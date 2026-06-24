@@ -65,3 +65,21 @@ def test_api_search_requires_query_or_vector(tmp_path):
 
     assert response.status_code == 400
     assert response.json()["detail"] == "Provide either 'vector' or 'query'."
+
+
+def test_api_search_falls_back_to_text_when_embeddings_are_unavailable(tmp_path, monkeypatch):
+    monkeypatch.setattr(ai_schema, "embed_text", lambda content: None)
+    client = TestClient(create_app(str(tmp_path)))
+    matching = client.post(
+        "/messages",
+        json={"session_id": "s1", "role": "user", "content": "Python import help"},
+    )
+    client.post(
+        "/messages",
+        json={"session_id": "s1", "role": "user", "content": "Weather report"},
+    )
+
+    response = client.post("/search", json={"query": "python", "top_k": 5})
+
+    assert response.status_code == 200
+    assert response.json()["results"] == [matching.json()["message"]]

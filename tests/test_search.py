@@ -37,3 +37,25 @@ def test_search_similar_skips_mismatched_vector_dimensions(tmp_path):
     results = messages.search_similar("embedding", [1.0, 0.0], top_k=5)
 
     assert [record["id"] for record in results] == [valid_id]
+
+
+def test_search_text_matches_case_insensitive_substrings(tmp_path):
+    db = connect(str(tmp_path))
+    messages = db.table("messages")
+    first_id = messages.insert({"content": "Python import help"})
+    second_id = messages.insert({"content": "More PYTHON notes"})
+    messages.insert({"content": "Weather report"})
+
+    results = messages.search_text("content", "python", top_k=5)
+
+    assert [record["id"] for record in results] == [first_id, second_id]
+
+
+def test_search_text_honors_top_k_and_empty_query(tmp_path):
+    db = connect(str(tmp_path))
+    messages = db.table("messages")
+    first_id = messages.insert({"content": "Python one"})
+    messages.insert({"content": "Python two"})
+
+    assert [record["id"] for record in messages.search_text("content", "python", top_k=1)] == [first_id]
+    assert messages.search_text("content", "") == []

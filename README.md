@@ -9,6 +9,7 @@ Zero dependencies. Human-readable JSON storage. Semantic search built in.
 ## Features
 - **No server, no config** – just a folder of JSON tables.
 - **AI‑ready** – store embeddings, search by meaning with cosine similarity.
+- **Text search fallback** – simple case-insensitive search when embeddings are unavailable.
 - **Multi‑user** – sessions, messages, tags, and memory per user.
 - **Library + CLI** – `import neudb` or use the command‑line tool.
 
@@ -29,6 +30,7 @@ from neudb import connect
 db = connect("mydb")
 users = db.table("users")
 users.insert({"username": "bob"})
+users.search_text("username", "bo")
 ```
 
 ## AI memory mode
@@ -69,6 +71,8 @@ curl -X POST http://127.0.0.1:8000/users \
 ```
 
 Set `NEUDB_API_DB=/path/to/db` to choose the API storage directory. By default it uses `neudb_api_data/`.
+
+`POST /search` accepts either a vector for semantic search or a query string. If embeddings are unavailable, query searches fall back to `Table.search_text()` on the `content` field.
 
 ## Local LLM agent memory
 

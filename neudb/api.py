@@ -38,6 +38,7 @@ class MessageCreate(BaseModel):
 class SearchRequest(BaseModel):
     table: str = "messages"
     field: str = "embedding"
+    text_field: str = "content"
     query: Optional[str] = None
     vector: Optional[List[float]] = None
     top_k: int = Field(default=5, ge=1)
@@ -48,16 +49,6 @@ def _record_by_id(db, table_name: str, record_id: str) -> dict:
     if not records:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Record not found")
     return records[0]
-
-
-def _embed_query(query: str) -> List[float]:
-    embedding = ai_schema.embed_text(query)
-    if embedding is None:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Install sentence-transformers or provide a vector.",
-        )
-    return embedding
 
 
 def create_app(db_dir: Optional[str] = None) -> FastAPI:
@@ -122,15 +113,19 @@ def create_app(db_dir: Optional[str] = None) -> FastAPI:
     def search(payload: SearchRequest):
         if payload.vector is not None:
             query_vector = payload.vector
+            results = db.table(payload.table).search_similar(payload.field, query_vector, top_k=payload.top_k)
         elif payload.query:
-            query_vector = _embed_query(payload.query)
+            query_vector = ai_schema.embed_text(payload.query)
+            if query_vector is None:
+                results = db.table(payload.table).search_text(payload.text_field, payload.query, top_k=payload.top_k)
+            else:
+                results = db.table(payload.table).search_similar(payload.field, query_vector, top_k=payload.top_k)
         else:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Provide either 'vector' or 'query'.",
             )
 
-        results = db.table(payload.table).search_similar(payload.field, query_vector, top_k=payload.top_k)
         return {"results": results}
 
     return app

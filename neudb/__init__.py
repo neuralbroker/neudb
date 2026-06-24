@@ -110,6 +110,18 @@ class Table:
         results.sort(key=lambda x: x[0], reverse=True)
         return [record for (sim, record) in results[:top_k]]
 
+    def search_text(self, field: str, query: str, top_k: int = 5) -> List[dict]:
+        """Return top_k records where field contains query, case-insensitive."""
+        query_text = query.lower()
+        if not query_text:
+            return []
+        results = []
+        for record in self._data.values():
+            value = record.get(field)
+            if value is not None and query_text in str(value).lower():
+                results.append(record)
+        return results[:top_k]
+
 
 class Database:
     """A database is a folder containing table files."""
