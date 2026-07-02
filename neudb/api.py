@@ -1,47 +1,65 @@
 """FastAPI REST API for neuDB."""
 
+import hmac
 import os
 from typing import Any, Dict, List, Optional
 
-from fastapi import FastAPI, HTTPException, status
+from fastapi import Depends, FastAPI, Header, HTTPException, status
 from pydantic import BaseModel, Field
 
 from . import ai_schema
 
 
 DEFAULT_API_DB_DIR = "neudb_api_data"
+IDENTIFIER_PATTERN = r"^[A-Za-z0-9_]+$"
+MAX_TEXT_LENGTH = 20_000
+MAX_VECTOR_DIMENSIONS = 4096
+MAX_TOP_K = 100
 
 
 class UserCreate(BaseModel):
-    username: str
-    email: str
-    display_name: Optional[str] = None
-    metadata: Dict[str, Any] = Field(default_factory=dict)
+    username: str = Field(min_length=1, max_length=128, pattern=IDENTIFIER_PATTERN)
+    email: str = Field(min_length=1, max_length=320)
+    display_name: Optional[str] = Field(default=None, max_length=256)
+    metadata: Dict[str, Any] = Field(default_factory=dict, max_length=50)
 
 
 class SessionCreate(BaseModel):
-    user_id: str
-    title: str
-    description: str = ""
-    model: str = ""
-    metadata: Dict[str, Any] = Field(default_factory=dict)
+    user_id: str = Field(min_length=1, max_length=128)
+    title: str = Field(min_length=1, max_length=512)
+    description: str = Field(default="", max_length=MAX_TEXT_LENGTH)
+    model: str = Field(default="", max_length=128)
+    metadata: Dict[str, Any] = Field(default_factory=dict, max_length=50)
 
 
 class MessageCreate(BaseModel):
-    session_id: str
-    role: str
-    content: str
-    embedding: Optional[List[float]] = None
-    metadata: Dict[str, Any] = Field(default_factory=dict)
+    session_id: str = Field(min_length=1, max_length=128)
+    role: str = Field(min_length=1, max_length=32, pattern=IDENTIFIER_PATTERN)
+    content: str = Field(min_length=1, max_length=MAX_TEXT_LENGTH)
+    embedding: Optional[List[float]] = Field(default=None, min_length=1, max_length=MAX_VECTOR_DIMENSIONS)
+    metadata: Dict[str, Any] = Field(default_factory=dict, max_length=50)
 
 
 class SearchRequest(BaseModel):
-    table: str = "messages"
-    field: str = "embedding"
-    text_field: str = "content"
-    query: Optional[str] = None
-    vector: Optional[List[float]] = None
-    top_k: int = Field(default=5, ge=1)
+    table: str = Field(default="messages", pattern=IDENTIFIER_PATTERN, max_length=64)
+    field: str = Field(default="embedding", pattern=IDENTIFIER_PATTERN, max_length=64)
+    text_field: str = Field(default="content", pattern=IDENTIFIER_PATTERN, max_length=64)
+    query: Optional[str] = Field(default=None, min_length=1, max_length=MAX_TEXT_LENGTH)
+    vector: Optional[List[float]] = Field(default=None, min_length=1, max_length=MAX_VECTOR_DIMENSIONS)
+    top_k: int = Field(default=5, ge=1, le=MAX_TOP_K)
+
+
+def _auth_dependency(expected_api_key: Optional[str]):
+    def require_api_key(x_api_key: Optional[str] = Header(default=None, alias="X-API-Key")):
+        if not expected_api_key:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Set NEUDB_API_KEY before enabling the HTTP API.",
+            )
+        if not x_api_key or not hmac.compare_digest(x_api_key, expected_api_key):
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid API key.")
+
+    return require_api_key
 
 
 def _record_by_id(db, table_name: str, record_id: str) -> dict:
@@ -51,18 +69,20 @@ def _record_by_id(db, table_name: str, record_id: str) -> dict:
     return records[0]
 
 
-def create_app(db_dir: Optional[str] = None) -> FastAPI:
+def create_app(db_dir: Optional[str] = None, api_key: Optional[str] = None) -> FastAPI:
     """Create a FastAPI app backed by a neuDB directory."""
     db_path = db_dir or os.environ.get("NEUDB_API_DB", DEFAULT_API_DB_DIR)
+    expected_api_key = api_key if api_key is not None else os.environ.get("NEUDB_API_KEY")
+    require_api_key = _auth_dependency(expected_api_key)
     db = ai_schema.init_ai_database(db_path)
-    app = FastAPI(title="neuDB API", version="0.4.0")
+    app = FastAPI(title="neuDB API", version="0.4.1")
     app.state.db = db
 
     @app.get("/health")
     def health():
-        return {"status": "ok"}
+        return {"status": "ok", "auth_configured": expected_api_key is not None}
 
-    @app.post("/users", status_code=status.HTTP_201_CREATED)
+    @app.post("/users", status_code=status.HTTP_201_CREATED, dependencies=[Depends(require_api_key)])
     def create_user(payload: UserCreate):
         user_id = ai_schema.add_user(
             db,
@@ -73,7 +93,7 @@ def create_app(db_dir: Optional[str] = None) -> FastAPI:
         )
         return {"id": user_id, "user": _record_by_id(db, "users", user_id)}
 
-    @app.post("/sessions", status_code=status.HTTP_201_CREATED)
+    @app.post("/sessions", status_code=status.HTTP_201_CREATED, dependencies=[Depends(require_api_key)])
     def create_session(payload: SessionCreate):
         session_id = ai_schema.create_session(
             db,
@@ -85,7 +105,7 @@ def create_app(db_dir: Optional[str] = None) -> FastAPI:
         )
         return {"id": session_id, "session": _record_by_id(db, "sessions", session_id)}
 
-    @app.post("/messages", status_code=status.HTTP_201_CREATED)
+    @app.post("/messages", status_code=status.HTTP_201_CREATED, dependencies=[Depends(require_api_key)])
     def create_message(payload: MessageCreate):
         if payload.embedding is None:
             message_id = ai_schema.add_message_with_embedding(
@@ -105,11 +125,11 @@ def create_app(db_dir: Optional[str] = None) -> FastAPI:
             message_id = db.table("messages").insert_with_embedding(message, payload.embedding)
         return {"id": message_id, "message": _record_by_id(db, "messages", message_id)}
 
-    @app.get("/sessions/{session_id}/messages")
+    @app.get("/sessions/{session_id}/messages", dependencies=[Depends(require_api_key)])
     def list_session_messages(session_id: str):
         return {"messages": ai_schema.get_session_messages(db, session_id)}
 
-    @app.post("/search")
+    @app.post("/search", dependencies=[Depends(require_api_key)])
     def search(payload: SearchRequest):
         if payload.vector is not None:
             query_vector = payload.vector

@@ -59,6 +59,7 @@ Install the API extra and run FastAPI with Uvicorn:
 
 ```bash
 pip install -e ".[api]"
+export NEUDB_API_KEY="change-me"
 uvicorn neudb.api:app --reload
 ```
 
@@ -67,10 +68,13 @@ Open Swagger UI at `http://127.0.0.1:8000/docs`, or use curl:
 ```bash
 curl -X POST http://127.0.0.1:8000/users \
   -H 'Content-Type: application/json' \
+  -H 'X-API-Key: change-me' \
   -d '{"username":"alice","email":"alice@example.com"}'
 ```
 
 Set `NEUDB_API_DB=/path/to/db` to choose the API storage directory. By default it uses `neudb_api_data/`.
+
+The HTTP API requires `X-API-Key` on all database endpoints. Set `NEUDB_API_KEY` before running Uvicorn.
 
 `POST /search` accepts either a vector for semantic search or a query string. If embeddings are unavailable, query searches fall back to `Table.search_text()` on the `content` field.
 

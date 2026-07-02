@@ -20,11 +20,35 @@ Usage as library:
 """
 
 import json
+import re
 import os
 import sys
 import uuid
 import math
+import tempfile
+import threading
+from pathlib import Path
 from typing import Dict, List
+
+
+_IDENTIFIER_RE = re.compile(r"^[A-Za-z0-9_]+$")
+_PATH_LOCKS = {}
+_PATH_LOCKS_GUARD = threading.Lock()
+
+
+def validate_identifier(value: str, label: str = "identifier") -> str:
+    """Validate a table or field identifier used to build paths/query records."""
+    if not isinstance(value, str) or not _IDENTIFIER_RE.fullmatch(value):
+        raise ValueError(f"Invalid {label}: use only letters, numbers, and underscores.")
+    return value
+
+
+def _lock_for_path(path: Path):
+    key = str(path.resolve())
+    with _PATH_LOCKS_GUARD:
+        if key not in _PATH_LOCKS:
+            _PATH_LOCKS[key] = threading.RLock()
+        return _PATH_LOCKS[key]
 
 
 # ----------------------------------------------------------------------
@@ -49,19 +73,36 @@ class Table:
     """Represents a single table stored as a JSON file."""
 
     def __init__(self, path: str):
-        self.path = path
+        self.path = Path(path)
         self._data: Dict[str, dict] = {}
         self._load()
 
     def _load(self):
-        if os.path.exists(self.path):
-            with open(self.path, 'r') as f:
-                self._data = json.load(f)
+        if self.path.exists():
+            with _lock_for_path(self.path):
+                with open(self.path, 'r', encoding="utf-8") as f:
+                    self._data = json.load(f)
 
     def _save(self):
-        os.makedirs(os.path.dirname(self.path), exist_ok=True)
-        with open(self.path, 'w') as f:
-            json.dump(self._data, f, indent=2)
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+        lock = _lock_for_path(self.path)
+        temp_path = None
+        with lock:
+            fd, temp_name = tempfile.mkstemp(
+                dir=str(self.path.parent),
+                prefix=f".{self.path.name}.",
+                suffix=".tmp",
+            )
+            temp_path = Path(temp_name)
+            try:
+                with os.fdopen(fd, 'w', encoding="utf-8") as f:
+                    json.dump(self._data, f, indent=2)
+                    f.flush()
+                    os.fsync(f.fileno())
+                os.replace(temp_path, self.path)
+            finally:
+                if temp_path is not None and temp_path.exists():
+                    temp_path.unlink()
 
     def insert(self, record: dict) -> str:
         """Insert a record. If no 'id' field, auto-generate UUID."""
@@ -127,19 +168,24 @@ class Database:
     """A database is a folder containing table files."""
 
     def __init__(self, db_dir: str):
-        self.db_dir = db_dir
+        self.db_dir = Path(db_dir).expanduser().resolve()
+
+    def _table_path(self, name: str) -> Path:
+        table_name = validate_identifier(name, "table name")
+        path = (self.db_dir / f"{table_name}.json").resolve()
+        if self.db_dir != path.parent:
+            raise ValueError("Table path escapes database directory.")
+        return path
 
     def table(self, name: str) -> Table:
-        filename = f"{name}.json"
-        path = os.path.join(self.db_dir, filename)
-        return Table(path)
+        return Table(self._table_path(name))
 
     def create_table(self, name: str):
         """Create a new table (just create an empty file)."""
-        path = os.path.join(self.db_dir, f"{name}.json")
-        if not os.path.exists(path):
-            with open(path, 'w') as f:
-                json.dump({}, f)
+        path = self._table_path(name)
+        if not path.exists():
+            table = Table(path)
+            table._save()
             print(f"Table '{name}' created.")
         else:
             print(f"Table '{name}' already exists.")

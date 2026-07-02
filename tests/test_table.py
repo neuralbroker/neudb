@@ -1,6 +1,29 @@
 from neudb import connect
 
 
+def test_table_names_reject_path_traversal(tmp_path):
+    db = connect(str(tmp_path))
+
+    for name in ["../outside", "/tmp/outside", "bad-name", "nested/table"]:
+        try:
+            db.table(name)
+        except ValueError as exc:
+            assert "Invalid table name" in str(exc)
+        else:
+            raise AssertionError(f"table name should be rejected: {name}")
+
+
+def test_create_table_rejects_path_traversal(tmp_path):
+    db = connect(str(tmp_path))
+
+    try:
+        db.create_table("../outside")
+    except ValueError as exc:
+        assert "Invalid table name" in str(exc)
+    else:
+        raise AssertionError("create_table should reject path traversal")
+
+
 def test_table_insert_select_update_delete(tmp_path):
     db = connect(str(tmp_path))
     users = db.table("users")
