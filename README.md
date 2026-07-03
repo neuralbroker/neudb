@@ -131,9 +131,10 @@ Each turn: search similar messages → inject context → save the exchange.
 ## Demos
 
 ```bash
-python demos/agent_demo.py          # users, sessions, tags, memories
-python demos/semantic_demo.py       # cosine similarity (2D vectors)
-python demos/real_semantic_demo.py  # real embeddings
+python demos/realworld_coding_assistant.py  # full walkthrough (recommended)
+python demos/agent_demo.py                  # users, sessions, tags, memories
+python demos/semantic_demo.py               # cosine similarity (2D vectors)
+python demos/real_semantic_demo.py          # real embeddings
 ```
 
 ## Project structure
