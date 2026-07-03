@@ -149,6 +149,7 @@ neudb/
 ├── demos/              # Example scripts
 ├── docs/
 │   └── brand/          # Logo assets
+├── website/            # Product landing page (local)
 ├── pyproject.toml
 └── CHANGELOG.md
 ```

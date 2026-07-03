@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 ### Added
+- Product website (`website/`) with xAI-inspired landing page
 - Brand assets (`docs/brand/`) — logo, icon, wordmark
 - Project documentation index (`docs/README.md`)
 
