@@ -9,6 +9,21 @@ description = "A tiny, file-based, AI-native database engine with semantic searc
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.8"
+authors = [{ name = "Abdulla Sajad" }]
+keywords = ["database", "ai", "embeddings", "semantic-search", "agents", "json", "memory"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Database",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
 dependencies = []
 
 [project.optional-dependencies]
@@ -16,6 +31,13 @@ api = ["fastapi>=0.110", "uvicorn[standard]>=0.27"]
 agent = ["sentence-transformers>=2.0"]
 embeddings = ["sentence-transformers>=2.0"]
 test = ["fastapi>=0.110", "httpx>=0.27", "pytest>=8.0"]
+
+[project.urls]
+Homepage = "https://github.com/neuralbroker/neudb"
+Documentation = "https://github.com/neuralbroker/neudb#readme"
+Repository = "https://github.com/neuralbroker/neudb"
+Changelog = "https://github.com/neuralbroker/neudb/blob/main/CHANGELOG.md"
+Issues = "https://github.com/neuralbroker/neudb/issues"
 
 [project.scripts]
 neudb = "neudb:main"

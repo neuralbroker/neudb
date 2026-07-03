@@ -1,61 +1,96 @@
-# neuDB
+<p align="center">
+  <img src="docs/brand/logo-mark.jpg" alt="neuDB" width="200">
+</p>
 
-A tiny, file-based, AI-native database engine.  
-Zero dependencies. Human-readable JSON storage. Semantic search built in.
+<h1 align="center">neuDB</h1>
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/)
+<p align="center">
+  <strong>AI-native database for everything you remember.</strong><br>
+  Zero dependencies · Human-readable JSON · Semantic search built in
+</p>
+
+<p align="center">
+  <a href="https://pypi.org/project/neudb/"><img src="https://img.shields.io/pypi/v/neudb.svg" alt="PyPI"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="MIT"></a>
+  <a href="https://www.python.org/"><img src="https://img.shields.io/badge/python-3.8+-blue.svg" alt="Python 3.8+"></a>
+  <a href="https://github.com/neuralbroker/neudb/actions"><img src="https://img.shields.io/badge/tests-24%20passing-brightgreen" alt="Tests"></a>
+</p>
+
+<p align="center">
+  <a href="#quick-start">Quick start</a> ·
+  <a href="#features">Features</a> ·
+  <a href="#ai-memory">AI memory</a> ·
+  <a href="#http-api">API</a> ·
+  <a href="#agent">Agent</a> ·
+  <a href="website/">Website</a> ·
+  <a href="CHANGELOG.md">Changelog</a>
+</p>
+
+---
 
 ## Features
-- **No server, no config** – just a folder of JSON tables.
-- **AI‑ready** – store embeddings, search by meaning with cosine similarity.
-- **Text search fallback** – simple case-insensitive search when embeddings are unavailable.
-- **Multi‑user** – sessions, messages, tags, and memory per user.
-- **Library + CLI** – `import neudb` or use the command‑line tool.
+
+| | |
+|---|---|
+| **No server, no config** | A folder of JSON tables — `cat` is your debugger |
+| **Semantic search** | Cosine similarity on embeddings, pure Python |
+| **Text fallback** | Case-insensitive search when embeddings are off |
+| **AI memory schema** | Users, sessions, messages, tags, memories |
+| **Three interfaces** | Python library, CLI, optional HTTP API + agent |
 
 ## Quick start
 
 ```bash
-# Clone
 git clone https://github.com/neuralbroker/neudb.git
 cd neudb
+pip install -e .
+```
 
-# CLI
-python neudb.py table create users
-python neudb.py row insert users --data '{"username":"alice"}'
-python neudb.py row list users
+**CLI**
 
-# Library
+```bash
+neudb table create users
+neudb row insert users --data '{"username":"alice"}'
+neudb row list users
+```
+
+**Library**
+
+```python
 from neudb import connect
+
 db = connect("mydb")
 users = db.table("users")
 users.insert({"username": "bob"})
 users.search_text("username", "bo")
 ```
 
-## AI memory mode
+## Install extras
+
+```bash
+pip install neudb              # core only
+pip install "neudb[api]"       # FastAPI HTTP server
+pip install "neudb[agent]"     # LLM memory agent + embeddings
+pip install "neudb[test]"      # pytest + httpx
+pip install -e ".[api,agent,test]"   # development
+```
+
+## AI memory
 
 ```python
 from neudb.ai_schema import *
-db = init_ai_database()
+
+db = init_ai_database("my_memory")
 alice = add_user(db, "alice", "alice@example.com")
 session = create_session(db, alice, "Chat about Python")
 add_message_with_embedding(db, session, "user", "How do I fix an import error?")
+
+# Search by meaning
+vec = embed_text("Python import errors")
+results = db.table("messages").search_similar("embedding", vec, top_k=5)
 ```
-
-## Install as a package
-
-```bash
-pip install .
-# or
-pip install -e .
-```
-
-Then you can `import neudb` from anywhere.
 
 ## HTTP API
-
-Install the API extra and run FastAPI with Uvicorn:
 
 ```bash
 pip install -e ".[api]"
@@ -63,7 +98,7 @@ export NEUDB_API_KEY="change-me"
 uvicorn neudb.api:app --reload
 ```
 
-Open Swagger UI at `http://127.0.0.1:8000/docs`, or use curl:
+Swagger UI: http://127.0.0.1:8000/docs
 
 ```bash
 curl -X POST http://127.0.0.1:8000/users \
@@ -72,15 +107,14 @@ curl -X POST http://127.0.0.1:8000/users \
   -d '{"username":"alice","email":"alice@example.com"}'
 ```
 
-Set `NEUDB_API_DB=/path/to/db` to choose the API storage directory. By default it uses `neudb_api_data/`.
+| Variable | Default | Purpose |
+|----------|---------|---------|
+| `NEUDB_API_KEY` | *(required)* | Auth for all DB endpoints |
+| `NEUDB_API_DB` | `neudb_api_data/` | API storage directory |
 
-The HTTP API requires `X-API-Key` on all database endpoints. Set `NEUDB_API_KEY` before running Uvicorn.
+## Agent
 
-`POST /search` accepts either a vector for semantic search or a query string. If embeddings are unavailable, query searches fall back to `Table.search_text()` on the `content` field.
-
-## Local LLM agent memory
-
-Run a chat loop that uses neuDB as long-term memory for Ollama:
+Long-term memory loop for Ollama or OpenAI:
 
 ```bash
 ollama pull llama3.2
@@ -88,19 +122,69 @@ pip install -e ".[agent]"
 neudb-agent --provider ollama --model llama3.2
 ```
 
-Each turn searches similar past messages, injects them into the prompt, and saves the new user/assistant exchange back into neuDB.
-
-OpenAI is also supported:
-
 ```bash
 export OPENAI_API_KEY="..."
 neudb-agent --provider openai --model gpt-4o-mini
 ```
 
-Use `--db /path/to/memory` to choose the memory directory. By default it uses `neudb_agent_memory/`.
+Each turn: search similar messages → inject context → save the exchange.
+
+## Demos
+
+```bash
+python demos/agent_demo.py          # users, sessions, tags, memories
+python demos/semantic_demo.py       # cosine similarity (2D vectors)
+python demos/real_semantic_demo.py  # real embeddings
+```
+
+## Website
+
+Product landing page with xAI-inspired design:
+
+```bash
+cd website && python3 -m http.server 8080
+```
+
+→ http://127.0.0.1:8080
+
+## Project structure
+
+```
+neudb/
+├── neudb/              # Python package
+│   ├── __init__.py     # Core engine (Table, Database, CLI)
+│   ├── ai_schema.py    # AI memory helpers
+│   ├── api.py          # FastAPI HTTP API
+│   └── agent.py        # LLM memory agent
+├── tests/              # pytest suite (24 tests)
+├── demos/              # Example scripts
+├── docs/
+│   └── brand/          # Logo assets
+├── website/            # Landing page
+├── pyproject.toml
+└── CHANGELOG.md
+```
+
+## Development
+
+```bash
+pip install -e ".[test,api]"
+pytest
+flake8 neudb/ tests/ --max-line-length=120 --ignore=E402,W503
+```
+
+## Brand
+
+Logo assets: [`docs/brand/`](docs/brand/)
+
+<p align="center">
+  <img src="docs/brand/icon.svg" alt="neuDB icon" width="64">
+</p>
 
 ## License
-MIT – see [LICENSE](LICENSE).
+
+MIT — see [LICENSE](LICENSE).
 
 ## Changelog
+
 See [CHANGELOG.md](CHANGELOG.md).

@@ -1,3 +1,13 @@
-# Core neuDB has no dependencies.
-# To enable AI embeddings, install:
-# sentence-transformers>=2.0
+# neuDB — install options
+#
+# Core (zero dependencies):
+#   pip install -e .
+#
+# With HTTP API:
+#   pip install -e ".[api]"
+#
+# With LLM agent + embeddings:
+#   pip install -e ".[agent]"
+#
+# Development:
+#   pip install -e ".[test,api,agent]"

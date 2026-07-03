@@ -1,5 +1,12 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+- Product website (`website/`) with xAI-inspired landing page
+- Brand assets (`docs/brand/`) — logo, icon, wordmark
+- Project documentation index (`docs/README.md`)
+
 ## [0.4.1] - 2026-07-02
 ### Security
 - Restricted table and API field identifiers to prevent path traversal.
