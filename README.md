@@ -148,7 +148,6 @@ neudb/
 ├── tests/              # pytest suite (24 tests)
 ├── demos/              # Example scripts
 ├── docs/
-│   └── brand/          # Logo assets
 ├── website/            # Product landing page (local)
 ├── pyproject.toml
 └── CHANGELOG.md
@@ -161,14 +160,6 @@ pip install -e ".[test,api]"
 pytest
 flake8 neudb/ tests/ --max-line-length=120 --ignore=E402,W503
 ```
-
-## Brand
-
-Logo assets: [`docs/brand/`](docs/brand/)
-
-<p align="center">
-  <img src="docs/brand/icon.svg" alt="neuDB icon" width="64">
-</p>
 
 ## License
 
