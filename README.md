@@ -22,7 +22,6 @@
   <a href="#ai-memory">AI memory</a> ·
   <a href="#http-api">API</a> ·
   <a href="#agent">Agent</a> ·
-  <a href="website/">Website</a> ·
   <a href="CHANGELOG.md">Changelog</a>
 </p>
 
@@ -137,16 +136,6 @@ python demos/semantic_demo.py       # cosine similarity (2D vectors)
 python demos/real_semantic_demo.py  # real embeddings
 ```
 
-## Website
-
-Product landing page with xAI-inspired design:
-
-```bash
-cd website && python3 -m http.server 8080
-```
-
-→ http://127.0.0.1:8080
-
 ## Project structure
 
 ```
@@ -160,7 +149,6 @@ neudb/
 ├── demos/              # Example scripts
 ├── docs/
 │   └── brand/          # Logo assets
-├── website/            # Landing page
 ├── pyproject.toml
 └── CHANGELOG.md
 ```
