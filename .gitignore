@@ -26,6 +26,10 @@ neudb_api_data/
 neudb_agent_memory/
 demos/realworld_dev_assistant_data/
 
+# Launch video intermediates
+docs/launch-video/raw.webm
+docs/launch-video/*.webm
+
 # IDE / editor
 .vscode/
 .idea/

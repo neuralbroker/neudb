@@ -10,6 +10,12 @@
 </p>
 
 <p align="center">
+  <a href="docs/launch-video/neudb-launch-15s.mp4">
+    <img src="docs/launch-video/neudb-launch-thumb.jpg" alt="neuDB launch video" width="640">
+  </a>
+</p>
+
+<p align="center">
   <a href="https://pypi.org/project/neudb/"><img src="https://img.shields.io/pypi/v/neudb.svg" alt="PyPI"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="MIT"></a>
   <a href="https://www.python.org/"><img src="https://img.shields.io/badge/python-3.8+-blue.svg" alt="Python 3.8+"></a>
@@ -17,6 +23,7 @@
 </p>
 
 <p align="center">
+  <a href="docs/launch-video/neudb-launch-15s.mp4">Launch video</a> ·
   <a href="#quick-start">Quick start</a> ·
   <a href="#features">Features</a> ·
   <a href="#ai-memory">AI memory</a> ·

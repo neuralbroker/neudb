@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>neuDB Launch</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      width: 1920px;
+      height: 1080px;
+      overflow: hidden;
+      background: #000;
+      font-family: Inter, system-ui, sans-serif;
+      color: #fff;
+    }
+    canvas {
+      position: absolute;
+      inset: 0;
+      width: 1920px;
+      height: 1080px;
+    }
+    .vignette {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse 70% 50% at 50% 40%, rgba(255,255,255,0.05) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .scene {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      animation-fill-mode: forwards;
+    }
+    /* Beat 1: 0-4s logo */
+    .scene-logo {
+      animation: showLogo 4s ease forwards;
+    }
+    @keyframes showLogo {
+      0%, 5% { opacity: 0; transform: scale(0.92); }
+      15%, 85% { opacity: 1; transform: scale(1); }
+      100% { opacity: 0; transform: scale(1.02); }
+    }
+    .logo-img {
+      width: 200px;
+      height: auto;
+      margin-bottom: 32px;
+      filter: drop-shadow(0 0 48px rgba(255,255,255,0.12));
+    }
+    .wordmark {
+      font-size: 96px;
+      font-weight: 500;
+      letter-spacing: -0.04em;
+    }
+    /* Beat 2: 4-8s tagline */
+    .scene-tagline {
+      animation: showTagline 4s ease 4s forwards;
+      text-align: center;
+      gap: 24px;
+    }
+    @keyframes showTagline {
+      0%, 8% { opacity: 0; transform: translateY(20px); }
+      18%, 75% { opacity: 1; transform: translateY(0); }
+      100% { opacity: 0; transform: translateY(-12px); }
+    }
+    .line-problem {
+      font-size: 52px;
+      font-weight: 400;
+      color: rgba(255,255,255,0.45);
+      letter-spacing: -0.02em;
+    }
+    .line-promise {
+      font-size: 72px;
+      font-weight: 500;
+      letter-spacing: -0.03em;
+    }
+    .line-promise span { color: rgba(255,255,255,0.85); }
+    /* Beat 3: 8-12s pillars */
+    .scene-pillars {
+      animation: showPillars 4s ease 8s forwards;
+      flex-direction: row;
+      gap: 48px;
+    }
+    @keyframes showPillars {
+      0%, 5% { opacity: 0; }
+      12%, 88% { opacity: 1; }
+      100% { opacity: 0; }
+    }
+    .pillar {
+      font-size: 36px;
+      font-weight: 500;
+      padding: 24px 40px;
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 16px;
+      background: rgba(255,255,255,0.03);
+      opacity: 0;
+      animation: pillarIn 0.6s ease forwards;
+    }
+    .pillar:nth-child(1) { animation-delay: 8.3s; }
+    .pillar:nth-child(2) { animation-delay: 8.7s; }
+    .pillar:nth-child(3) { animation-delay: 9.1s; }
+    @keyframes pillarIn {
+      from { opacity: 0; transform: translateY(24px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    /* Beat 4: 12-15s CTA */
+    .scene-cta {
+      animation: showCta 3s ease 12s forwards;
+      text-align: center;
+      gap: 20px;
+    }
+    @keyframes showCta {
+      0%, 10% { opacity: 0; transform: scale(0.96); }
+      25%, 100% { opacity: 1; transform: scale(1); }
+    }
+    .cta-cmd {
+      font-family: "JetBrains Mono", monospace;
+      font-size: 44px;
+      padding: 20px 48px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 999px;
+    }
+    .cta-url {
+      font-size: 32px;
+      color: rgba(255,255,255,0.5);
+      letter-spacing: -0.01em;
+    }
+    .cta-logo-small {
+      font-size: 28px;
+      font-weight: 500;
+      margin-bottom: 8px;
+      opacity: 0.7;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="bg" width="1920" height="1080" aria-hidden="true"></canvas>
+  <div class="vignette" aria-hidden="true"></div>
+
+  <div class="scene scene-logo">
+    <img src="../brand/logo-mark.jpg" alt="" class="logo-img">
+    <div class="wordmark">neuDB</div>
+  </div>
+
+  <div class="scene scene-tagline">
+    <p class="line-problem">Your AI forgets every chat.</p>
+    <p class="line-promise"><span>neuDB</span> remembers.</p>
+  </div>
+
+  <div class="scene scene-pillars">
+    <div class="pillar">JSON on disk</div>
+    <div class="pillar">Semantic search</div>
+    <div class="pillar">Zero deps</div>
+  </div>
+
+  <div class="scene scene-cta">
+    <div class="cta-logo-small">neuDB</div>
+    <div class="cta-cmd">pip install neudb</div>
+    <div class="cta-url">github.com/neuralbroker/neudb</div>
+  </div>
+
+  <script>
+    (function () {
+      const canvas = document.getElementById('bg');
+      const ctx = canvas.getContext('2d');
+      const nodes = Array.from({ length: 36 }, () => ({
+        x: Math.random() * 1920,
+        y: Math.random() * 1080,
+        vx: (Math.random() - 0.5) * 0.4,
+        vy: (Math.random() - 0.5) * 0.4,
+        r: Math.random() * 1.5 + 0.5,
+      }));
+      function draw() {
+        ctx.clearRect(0, 0, 1920, 1080);
+        for (let i = 0; i < nodes.length; i++) {
+          const a = nodes[i];
+          a.x += a.vx; a.y += a.vy;
+          if (a.x < 0 || a.x > 1920) a.vx *= -1;
+          if (a.y < 0 || a.y > 1080) a.vy *= -1;
+          for (let j = i + 1; j < nodes.length; j++) {
+            const b = nodes[j];
+            const d = Math.hypot(a.x - b.x, a.y - b.y);
+            if (d < 140) {
+              ctx.strokeStyle = `rgba(255,255,255,${(1 - d / 140) * 0.1})`;
+              ctx.lineWidth = 0.5;
+              ctx.beginPath();
+              ctx.moveTo(a.x, a.y);
+              ctx.lineTo(b.x, b.y);
+              ctx.stroke();
+            }
+          }
+        }
+        nodes.forEach((n) => {
+          ctx.fillStyle = 'rgba(255,255,255,0.3)';
+          ctx.beginPath();
+          ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
+          ctx.fill();
+        });
+        requestAnimationFrame(draw);
+      }
+      draw();
+    })();
+  </script>
+</body>
+</html>
